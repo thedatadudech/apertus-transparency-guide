@@ -1,0 +1,89 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# HuggingFace
+.cache/
+huggingface_token.txt
+
+# Model files (if downloaded locally)
+models/
+*.bin
+*.safetensors
+pytorch_model*.bin
+
+# Logs
+*.log
+logs/
+apertus_*.txt
+
+# Export files and temporary command outputs
+2025-*-command-*.txt
+*command-message*.txt
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# Package files
+*.tar.gz
+*.zip
+
+# Coverage reports
+htmlcov/
+.coverage
+.pytest_cache/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
