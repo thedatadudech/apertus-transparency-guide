@@ -6,3 +6,7 @@ plotly>=5.15.0
 numpy>=1.24.0,<2.0.0
 pandas>=2.0.0
 scipy>=1.10.0
+
+# Optional CUDA xIELU optimization (requires CUDA + compilation)
+# Install separately if you have NVIDIA GPU:
+# pip install git+https://github.com/nickjbrowning/XIELU

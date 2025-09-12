@@ -13,6 +13,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import warnings
 import os
+import spaces
 
 # Set environment variables to reduce verbosity and warnings
 os.environ['TRANSFORMERS_VERBOSITY'] = 'error'
@@ -20,10 +21,20 @@ os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 warnings.filterwarnings('ignore')
 
+# Try to import CUDA xIELU optimization for Apertus
+try:
+    from xielu.ops.wrappers import XIELU
+    XIELU_AVAILABLE = True
+    print("✅ CUDA xIELU optimization available - Apertus performance enhanced!")
+except ImportError:
+    XIELU_AVAILABLE = False
+    print("ℹ️ CUDA xIELU not available - using fallback (install: pip install git+https://github.com/nickjbrowning/XIELU)")
+
 # Global variables for model and tokenizer
 model = None
 tokenizer = None
 
+@spaces.GPU
 def load_model(hf_token):
     """Load Apertus model with HuggingFace token"""
     global model, tokenizer
@@ -52,11 +63,18 @@ def load_model(hf_token):
         total_params = sum(p.numel() for p in model.parameters())
         memory_usage = torch.cuda.memory_allocated() / 1024**3 if torch.cuda.is_available() else 0
         
-        return f"✅ Model loaded successfully!\n📊 Parameters: {total_params:,}\n💾 Memory: {memory_usage:.1f} GB" if memory_usage > 0 else f"✅ Model loaded successfully!\n📊 Parameters: {total_params:,}\n💾 CPU mode"
+        # Check for xIELU optimization status
+        xielu_status = "✅ CUDA xIELU Active" if XIELU_AVAILABLE and torch.cuda.is_available() else "⚠️ xIELU Fallback"
+        
+        if memory_usage > 0:
+            return f"✅ Model loaded successfully!\n📊 Parameters: {total_params:,}\n💾 Memory: {memory_usage:.1f} GB\n🚀 Optimization: {xielu_status}"
+        else:
+            return f"✅ Model loaded successfully!\n📊 Parameters: {total_params:,}\n💾 CPU mode\n🚀 Optimization: {xielu_status}"
         
     except Exception as e:
         return f"❌ Failed to load model: {str(e)}\n💡 Check your token and model access permissions."
 
+@spaces.GPU
 def chat_with_apertus(message, max_tokens=300):
     """Simple chat function"""
     global model, tokenizer
@@ -99,6 +117,7 @@ You are Apertus, a helpful Swiss AI assistant. You are transparent, multilingual
     except Exception as e:
         return f"❌ Error: {str(e)}"
 
+@spaces.GPU
 def analyze_attention(text, layer=15):
     """Analyze attention patterns"""
     global model, tokenizer
@@ -153,6 +172,7 @@ def analyze_attention(text, layer=15):
     except Exception as e:
         return None, f"❌ Error analyzing attention: {str(e)}"
 
+@spaces.GPU
 def analyze_token_predictions(text):
     """Analyze next token predictions"""
     global model, tokenizer
@@ -206,6 +226,7 @@ def analyze_token_predictions(text):
     except Exception as e:
         return None, f"❌ Error analyzing predictions: {str(e)}"
 
+@spaces.GPU
 def analyze_layer_evolution(text):
     """Analyze how representations evolve through layers"""
     global model, tokenizer
@@ -274,6 +295,7 @@ def analyze_layer_evolution(text):
     except Exception as e:
         return None, f"❌ Error analyzing layer evolution: {str(e)}"
 
+@spaces.GPU
 def analyze_weights(layer_num, layer_type):
     """Analyze weight distribution with research-based metrics"""
     global model
@@ -615,7 +637,7 @@ def create_interface():
             <p style="font-size: 1.1em; margin-bottom: 15px; color: #f8f9fa; font-weight: 500;">
                 Unlike ChatGPT or Claude, you can see <strong>EVERYTHING</strong> happening inside the AI model:
             </p>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin: 20px 0;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin: 20px 0;">
                 <div style="background: rgba(13, 20, 33, 0.8); padding: 20px; border-radius: 10px; border-left: 4px solid #4dabf7; box-shadow: 0 4px 12px rgba(77, 171, 247, 0.2); border: 1px solid rgba(77, 171, 247, 0.3);">
                     <strong style="color: #74c0fc; font-size: 1.1em;">🧠 Attention Patterns</strong><br>
                     <span style="color: #ced4da; line-height: 1.4;">Which words the AI focuses on (like eye-tracking during reading)</span>
@@ -632,9 +654,13 @@ def create_interface():
                     <strong style="color: #66d9ef; font-size: 1.1em;">🔍 Thinking Process</strong><br>
                     <span style="color: #ced4da; line-height: 1.4;">Step-by-step how responses are generated</span>
                 </div>
+                <div style="background: rgba(13, 20, 33, 0.8); padding: 20px; border-radius: 10px; border-left: 4px solid #ff6b6b; box-shadow: 0 4px 12px rgba(255, 107, 107, 0.2); border: 1px solid rgba(255, 107, 107, 0.3);">
+                    <strong style="color: #ff8a8a; font-size: 1.1em;">🚀 CUDA xIELU</strong><br>
+                    <span style="color: #ced4da; line-height: 1.4;">Swiss innovation: learnable activation function with GPU acceleration</span>
+                </div>
             </div>
             <p style="text-align: center; font-size: 1.3em; margin-top: 25px; color: #ff6b6b; font-weight: 600;">
-                <strong>This is complete AI transparency - no black boxes! 🇨🇭</strong>
+                <strong>This is complete AI transparency + Swiss innovations! 🇨🇭</strong>
             </p>
         </div>
         """)
