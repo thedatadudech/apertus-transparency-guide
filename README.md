@@ -4,8 +4,9 @@ emoji: 🏔️
 colorFrom: red
 colorTo: blue
 sdk: gradio
-sdk_version: 4.44.0
+sdk_version: 5.44.0
 app_file: app.py
+hardware: zero-gpu
 pinned: false
 license: mit
 short_description: Complete transparency for Swiss AI model
