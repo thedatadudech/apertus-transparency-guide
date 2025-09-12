@@ -6,7 +6,7 @@ colorTo: blue
 sdk: gradio
 sdk_version: 5.44.0
 app_file: app.py
-hardware: zero-gpu
+# hardware: zero-gpu  # Temporarily disabled for testing
 pinned: false
 license: mit
 short_description: Complete transparency for Swiss AI model

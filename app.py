@@ -13,7 +13,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import warnings
 import os
-import spaces
+# import spaces  # Temporarily disabled for CPU testing
 
 # Set environment variables to reduce verbosity and warnings
 os.environ['TRANSFORMERS_VERBOSITY'] = 'error'
@@ -34,7 +34,6 @@ except ImportError:
 model = None
 tokenizer = None
 
-@spaces.GPU
 def load_model(hf_token):
     """Load Apertus model with HuggingFace token"""
     global model, tokenizer
@@ -74,7 +73,6 @@ def load_model(hf_token):
     except Exception as e:
         return f"❌ Failed to load model: {str(e)}\n💡 Check your token and model access permissions."
 
-@spaces.GPU
 def chat_with_apertus(message, max_tokens=300):
     """Simple chat function"""
     global model, tokenizer
@@ -117,7 +115,6 @@ You are Apertus, a helpful Swiss AI assistant. You are transparent, multilingual
     except Exception as e:
         return f"❌ Error: {str(e)}"
 
-@spaces.GPU
 def analyze_attention(text, layer=15):
     """Analyze attention patterns"""
     global model, tokenizer
@@ -172,7 +169,6 @@ def analyze_attention(text, layer=15):
     except Exception as e:
         return None, f"❌ Error analyzing attention: {str(e)}"
 
-@spaces.GPU
 def analyze_token_predictions(text):
     """Analyze next token predictions"""
     global model, tokenizer
@@ -226,7 +222,6 @@ def analyze_token_predictions(text):
     except Exception as e:
         return None, f"❌ Error analyzing predictions: {str(e)}"
 
-@spaces.GPU
 def analyze_layer_evolution(text):
     """Analyze how representations evolve through layers"""
     global model, tokenizer
@@ -295,7 +290,6 @@ def analyze_layer_evolution(text):
     except Exception as e:
         return None, f"❌ Error analyzing layer evolution: {str(e)}"
 
-@spaces.GPU
 def analyze_weights(layer_num, layer_type):
     """Analyze weight distribution with research-based metrics"""
     global model
