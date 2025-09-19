@@ -48,15 +48,23 @@ except ImportError:
 # Global variables for model and tokenizer
 model = None
 tokenizer = None
+model_loaded = False
+
+# Get HF token from environment
+HF_TOKEN = os.environ.get('HF_TOKEN', None)
 
 @spaces.GPU
-def load_model(hf_token):
-    """Load Apertus model with HuggingFace token"""
-    global model, tokenizer
-    
-    if not hf_token or not hf_token.startswith("hf_"):
-        return "❌ Invalid HuggingFace token. Must start with 'hf_'"
-    
+def load_model():
+    """Load Apertus model with HuggingFace token from environment"""
+    global model, tokenizer, model_loaded
+
+    if model_loaded:
+        return "✅ Model already loaded!"
+
+    hf_token = HF_TOKEN
+    if not hf_token:
+        return "❌ No HuggingFace token found. Please set HF_TOKEN environment variable."
+
     model_name = "swiss-ai/Apertus-8B-Instruct-2509"
     
     try:
@@ -96,6 +104,7 @@ def load_model(hf_token):
         # Check for xIELU optimization status
         xielu_status = "✅ CUDA xIELU Active" if XIELU_AVAILABLE and torch.cuda.is_available() else "🤗 HuggingFace Optimized"
         
+        model_loaded = True
         if memory_usage > 0:
             return f"✅ Model loaded successfully!\n📊 Parameters: {total_params:,}\n💾 Memory: {memory_usage:.1f} GB\n🚀 Optimization: {xielu_status}"
         else:
@@ -108,9 +117,12 @@ def load_model(hf_token):
 def chat_with_apertus(message, max_tokens=300):
     """Simple chat function"""
     global model, tokenizer
-    
+
+    # Try to load model if not loaded
     if model is None or tokenizer is None:
-        return "❌ Please load the model first by entering your HuggingFace token."
+        load_result = load_model()
+        if "❌" in load_result:
+            return load_result
     
     try:
         formatted_prompt = f"""Below is an instruction that describes a task. Write a response that appropriately completes the request.
@@ -2159,31 +2171,14 @@ def create_interface():
         </div>
         """)
         
-        with gr.Row():
-            with gr.Column(scale=2):
-                hf_token = gr.Textbox(
-                    label="🗝️ HuggingFace Token",
-                    placeholder="hf_...",
-                    type="password",
-                    info="Required to access swiss-ai/Apertus-8B-Instruct-2509. Get your token from: https://huggingface.co/settings/tokens",
-                    container=True
-                )
-            with gr.Column(scale=1):
-                load_btn = gr.Button(
-                    "🇨🇭 Load Apertus Model", 
-                    variant="primary", 
-                    size="lg",
-                    elem_classes="auth-button"
-                )
-        
-        with gr.Row():
-            model_status = gr.Textbox(
-                label="📊 Model Status", 
-                interactive=False,
-                container=True
-            )
-        
-        load_btn.click(load_model, inputs=[hf_token], outputs=[model_status])
+        # Model Status Display
+        model_status = gr.Textbox(
+            label="📊 Model Status",
+            value="⏳ Loading Apertus model...",
+            interactive=False,
+            container=True
+        )
+
         
         # Main Interface Tabs
         with gr.Tabs():
@@ -2202,6 +2197,7 @@ def create_interface():
                         chat_output = gr.Markdown(label="Apertus Response")
                 
                 chat_btn.click(chat_with_apertus, inputs=[chat_input, max_tokens], outputs=[chat_output])
+                chat_input.submit(chat_with_apertus, inputs=[chat_input, max_tokens], outputs=[chat_output])
             
             # Attention Analysis Tab
             with gr.TabItem("👁️ Attention Patterns"):
@@ -2462,6 +2458,9 @@ def create_interface():
         </div>
         """)
     
+    # Auto-load model on startup
+    demo.load(load_model, outputs=[model_status])
+
     return demo
 
 # Launch the app
