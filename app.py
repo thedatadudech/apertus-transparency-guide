@@ -101,29 +101,50 @@ def load_model():
             )
             print(f"✅ Model loaded to GPU in {time.time() - start_time:.2f}s")
         else:
-            print("💻 No GPU detected, loading in CPU mode...")
-            print("⚠️ Warning: CPU mode will be slower")
+            print("💻 CPU Enhanced Mode - Optimizing for CPU performance...")
+            print("🚀 Using CPU-specific optimizations for better performance")
+
+            # Set CPU optimization flags
+            torch.set_num_threads(os.cpu_count())  # Use all CPU cores
+            torch.set_grad_enabled(False)  # Disable gradients for inference
+
             start_time = time.time()
-            # CPU-only configuration
+            # CPU-optimized configuration
             model = AutoModelForCausalLM.from_pretrained(
                 model_name,
                 token=hf_token,
-                torch_dtype=torch.float32,
+                torch_dtype=torch.float32,  # float32 for CPU
                 device_map="cpu",
                 low_cpu_mem_usage=True,
                 output_attentions=True,
                 output_hidden_states=True,
                 trust_remote_code=True,
-                use_safetensors=True
+                use_safetensors=True,
+                offload_folder="offload",  # Offload to disk if needed
+                offload_state_dict=True  # Offload state dict to save RAM
             )
+
+            # Enable CPU optimizations
+            model.eval()  # Set to evaluation mode
+            if hasattr(torch, 'compile'):
+                print("⚙️ Attempting torch.compile for CPU optimization...")
+                try:
+                    model = torch.compile(model, mode="reduce-overhead")
+                    print("✅ torch.compile enabled for faster CPU inference")
+                except:
+                    print("⚠️ torch.compile not available, using standard mode")
             print(f"✅ Model loaded to CPU in {time.time() - start_time:.2f}s")
 
         print("📊 Calculating model statistics...")
         total_params = sum(p.numel() for p in model.parameters())
         memory_usage = torch.cuda.memory_allocated() / 1024**3 if torch.cuda.is_available() else 0
         
-        # Check for xIELU optimization status
-        xielu_status = "✅ CUDA xIELU Active" if XIELU_AVAILABLE and torch.cuda.is_available() else "🤗 HuggingFace Optimized"
+        # Check optimization status
+        if torch.cuda.is_available():
+            xielu_status = "✅ CUDA xIELU Active" if XIELU_AVAILABLE else "🎮 GPU Accelerated"
+        else:
+            cpu_count = os.cpu_count()
+            xielu_status = f"💪 CPU Enhanced ({cpu_count} cores)"
         
         model_loaded = True
         print(f"✅ MODEL LOADED SUCCESSFULLY!")
@@ -134,7 +155,11 @@ def load_model():
         if memory_usage > 0:
             return f"✅ Model loaded successfully!\n📊 Parameters: {total_params:,}\n💾 Memory: {memory_usage:.1f} GB\n🚀 Optimization: {xielu_status}"
         else:
-            return f"✅ Model loaded successfully!\n📊 Parameters: {total_params:,}\n💾 CPU mode\n🚀 Optimization: {xielu_status}"
+            # Get CPU info
+            import psutil
+            cpu_percent = psutil.cpu_percent(interval=1)
+            ram_gb = psutil.virtual_memory().total / (1024**3)
+            return f"✅ Model loaded successfully!\n📊 Parameters: {total_params:,}\n💻 CPU Enhanced Mode\n💾 RAM: {ram_gb:.1f} GB available\n🚀 Optimization: {xielu_status}\n⚡ CPU Load: {cpu_percent:.1f}%"
         
     except Exception as e:
         print(f"❌ ERROR loading model: {str(e)}")

@@ -6,3 +6,9 @@ plotly
 numpy<2.0.0
 pandas
 scipy
+pytorch_optimizer
+matplotlib
+seaborn
+protobuf
+sentencepiece
+psutil
