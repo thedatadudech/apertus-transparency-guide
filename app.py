@@ -2478,9 +2478,9 @@ def create_interface():
             </div>
         </div>
         """)
-    
-    # Auto-load model on startup
-    demo.load(load_model, outputs=[model_status])
+
+        # Auto-load model on startup (inside the Blocks context)
+        demo.load(load_model, outputs=[model_status])
 
     return demo
 
