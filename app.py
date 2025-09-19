@@ -2467,4 +2467,4 @@ def create_interface():
 # Launch the app
 if __name__ == "__main__":
     demo = create_interface()
-    demo.launch(server_port=8501, server_name="0.0.0.0")
+    demo.launch()
