@@ -14,7 +14,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 import warnings
 import os
 import time  # For timing measurements
-import spaces
+# import spaces  # Temporarily disabled for simpler deployment
 
 # Advanced ML components (2024 State-of-the-Art)
 try:
@@ -54,7 +54,6 @@ model_loaded = False
 HF_TOKEN = os.environ.get('HF_TOKEN', None)
 print(f"🔐 HF_TOKEN available: {bool(HF_TOKEN)}")
 
-@spaces.GPU(duration=120)
 def load_model():
     """Load Apertus model with HuggingFace token from environment"""
     global model, tokenizer, model_loaded
@@ -144,16 +143,13 @@ def load_model():
         print(f"📋 Full traceback:\n{traceback.format_exc()}")
         return f"❌ Failed to load model: {str(e)}\n💡 Check your token and model access permissions."
 
-@spaces.GPU
 def chat_with_apertus(message, max_tokens=300):
     """Simple chat function"""
     global model, tokenizer
 
-    # Try to load model if not loaded
+    # Check if model needs to be loaded
     if model is None or tokenizer is None:
-        load_result = load_model()
-        if "❌" in load_result:
-            return load_result
+        return "❌ Model not loaded. Please wait for the model to initialize or refresh the page."
     
     try:
         formatted_prompt = f"""Below is an instruction that describes a task. Write a response that appropriately completes the request.
@@ -192,7 +188,6 @@ You are Apertus, a helpful Swiss AI assistant. You are transparent, multilingual
     except Exception as e:
         return f"❌ Error: {str(e)}"
 
-@spaces.GPU
 def analyze_attention(text, layer=15):
     """Analyze attention patterns"""
     global model, tokenizer
@@ -247,7 +242,6 @@ def analyze_attention(text, layer=15):
     except Exception as e:
         return None, f"❌ Error analyzing attention: {str(e)}"
 
-@spaces.GPU
 def analyze_token_predictions(text):
     """Analyze next token predictions"""
     global model, tokenizer
@@ -301,7 +295,6 @@ def analyze_token_predictions(text):
     except Exception as e:
         return None, f"❌ Error analyzing predictions: {str(e)}"
 
-@spaces.GPU
 def analyze_layer_evolution(text):
     """Analyze how representations evolve through layers"""
     global model, tokenizer
@@ -370,7 +363,6 @@ def analyze_layer_evolution(text):
     except Exception as e:
         return None, f"❌ Error analyzing layer evolution: {str(e)}"
 
-@spaces.GPU
 def analyze_weights(layer_num, layer_type):
     """Analyze weight distribution with research-based metrics"""
     global model
@@ -819,7 +811,6 @@ def goldfish_loss_function(logits, targets, k=0.1, temperature=1.0):
     else:
         return masked_loss.sum()
 
-@spaces.GPU
 def analyze_memorization_patterns(text, k_values=[0.0, 0.1, 0.2, 0.3]):
     """Analyze how Goldfish Loss affects memorization"""
     global model, tokenizer
@@ -1124,7 +1115,6 @@ def simulate_optimizer_comparison(baseline_loss, num_steps):
 # 🧠 DECISION PROCESS & GERMAN LANGUAGE ANALYSIS
 # =============================================================================
 
-@spaces.GPU
 def analyze_decision_process(text, max_steps=10):
     """Step-by-step decision process like CLI script"""
     global model, tokenizer
@@ -1258,7 +1248,6 @@ def analyze_decision_process(text, max_steps=10):
     except Exception as e:
         return None, f"❌ Error analyzing decision process: {str(e)}"
 
-@spaces.GPU
 def analyze_german_compounds(text_input=""):
     """Analyze German compound words with multi-tokenizer comparison"""
     global model, tokenizer
