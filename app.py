@@ -52,28 +52,44 @@ model_loaded = False
 
 # Get HF token from environment
 HF_TOKEN = os.environ.get('HF_TOKEN', None)
+print(f"🔐 HF_TOKEN available: {bool(HF_TOKEN)}")
 
-@spaces.GPU
+@spaces.GPU(duration=120)
 def load_model():
     """Load Apertus model with HuggingFace token from environment"""
     global model, tokenizer, model_loaded
 
+    print("🚀 Starting model loading process...")
+
     if model_loaded:
+        print("✅ Model already loaded, skipping...")
         return "✅ Model already loaded!"
 
     hf_token = HF_TOKEN
     if not hf_token:
+        print("❌ ERROR: No HF_TOKEN found in environment variables")
         return "❌ No HuggingFace token found. Please set HF_TOKEN environment variable."
 
     model_name = "swiss-ai/Apertus-8B-Instruct-2509"
-    
+    print(f"📦 Loading model: {model_name}")
+    print(f"🔐 Token available: {hf_token[:10]}..." if hf_token else "No token")
+
     try:
+        # Load tokenizer
+        print("📝 Loading tokenizer...")
+        start_time = time.time()
         tokenizer = AutoTokenizer.from_pretrained(model_name, token=hf_token)
+        print(f"✅ Tokenizer loaded in {time.time() - start_time:.2f}s")
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
-        
-        # GPU-optimized loading
+            print("📝 Set pad_token to eos_token")
+
+        # Check GPU availability
         if torch.cuda.is_available():
+            print(f"🎮 GPU detected: {torch.cuda.get_device_name(0)}")
+            print(f"💾 GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
+            print("⚡ Loading model with GPU optimization...")
+            start_time = time.time()
             model = AutoModelForCausalLM.from_pretrained(
                 model_name,
                 token=hf_token,
@@ -84,7 +100,11 @@ def load_model():
                 output_hidden_states=True,
                 trust_remote_code=True
             )
+            print(f"✅ Model loaded to GPU in {time.time() - start_time:.2f}s")
         else:
+            print("💻 No GPU detected, loading in CPU mode...")
+            print("⚠️ Warning: CPU mode will be slower")
+            start_time = time.time()
             # CPU-only configuration
             model = AutoModelForCausalLM.from_pretrained(
                 model_name,
@@ -97,7 +117,9 @@ def load_model():
                 trust_remote_code=True,
                 use_safetensors=True
             )
-        
+            print(f"✅ Model loaded to CPU in {time.time() - start_time:.2f}s")
+
+        print("📊 Calculating model statistics...")
         total_params = sum(p.numel() for p in model.parameters())
         memory_usage = torch.cuda.memory_allocated() / 1024**3 if torch.cuda.is_available() else 0
         
@@ -105,12 +127,21 @@ def load_model():
         xielu_status = "✅ CUDA xIELU Active" if XIELU_AVAILABLE and torch.cuda.is_available() else "🤗 HuggingFace Optimized"
         
         model_loaded = True
+        print(f"✅ MODEL LOADED SUCCESSFULLY!")
+        print(f"📊 Total parameters: {total_params:,}")
+        print(f"💾 Memory usage: {memory_usage:.1f} GB" if memory_usage > 0 else "💻 Running in CPU mode")
+        print(f"🚀 Optimization: {xielu_status}")
+
         if memory_usage > 0:
             return f"✅ Model loaded successfully!\n📊 Parameters: {total_params:,}\n💾 Memory: {memory_usage:.1f} GB\n🚀 Optimization: {xielu_status}"
         else:
             return f"✅ Model loaded successfully!\n📊 Parameters: {total_params:,}\n💾 CPU mode\n🚀 Optimization: {xielu_status}"
         
     except Exception as e:
+        print(f"❌ ERROR loading model: {str(e)}")
+        print(f"🔍 Error type: {type(e).__name__}")
+        import traceback
+        print(f"📋 Full traceback:\n{traceback.format_exc()}")
         return f"❌ Failed to load model: {str(e)}\n💡 Check your token and model access permissions."
 
 @spaces.GPU
@@ -2174,9 +2205,10 @@ def create_interface():
         # Model Status Display
         model_status = gr.Textbox(
             label="📊 Model Status",
-            value="⏳ Loading Apertus model...",
+            value="⏳ Initializing Apertus Swiss AI model (8B parameters)...\n🔍 This may take 1-2 minutes on first load...",
             interactive=False,
-            container=True
+            container=True,
+            lines=3
         )
 
         
@@ -2465,5 +2497,18 @@ def create_interface():
 
 # Launch the app
 if __name__ == "__main__":
+    print("🇨🇭" + "="*60)
+    print("🇨🇭 APERTUS SWISS AI TRANSPARENCY DASHBOARD")
+    print("🇨🇭" + "="*60)
+    print(f"📦 Model: swiss-ai/Apertus-8B-Instruct-2509")
+    print(f"🎮 GPU Available: {torch.cuda.is_available()}")
+    if torch.cuda.is_available():
+        print(f"🎮 GPU Device: {torch.cuda.get_device_name(0)}")
+    print(f"🔐 HF Token configured: {bool(HF_TOKEN)}")
+    print("="*60)
+    print("🚀 Starting Gradio interface...")
+
     demo = create_interface()
+    print("✅ Interface created, launching...")
     demo.launch()
+    print("🎆 App launched successfully!")
